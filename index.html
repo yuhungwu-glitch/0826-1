@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>甜蜜的陷阱：聰明控糖，祖孫一起來！</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals -->
+    <!-- Application Structure Plan: The SPA is structured into five main, scrollable sections, each focusing on a logical step in understanding and managing sugar intake for the whole family: 1) Hero Section: Introduces the theme "Sweet Traps, Healthy Alarms: Smart Sugar Control for Grandparents and Grandchildren." 2) Sugar Detective Lab: An interactive exploration of sugar content in common foods and drinks. Users can select categories to update a bar chart, revealing hidden sugars. 3) Sugar's Health Impact Across Generations: This section will use expandable/collapsible panels to present the specific health impacts of high sugar intake on adults (general), seniors, and children, reinforcing the "祖孫一起來" theme. 4) My Daily Sugar Tracker (Calculator): A simple interactive tool where users can input common high-sugar items they consume to calculate an estimated daily sugar intake against recommended limits, offering a personalized awareness. 5) Smart Choices & Family Action Plan: Provides actionable tips and healthy alternatives for the entire family, organized into clear, digestible points. This structure moves from general awareness to specific discovery, deep understanding of consequences, personal relevance, and finally, actionable solutions. It's chosen to provide a comprehensive, guided, yet interactive learning path. -->
+    <!-- Visualization & Content Choices: Hero Section: Report Info -> Introduction to the sugar problem, focus on family health. Goal -> Engage and set the context. Viz/Presentation Method -> Large title, descriptive text, call-to-action button. Interaction -> Smooth scroll. Justification -> Standard web hero for immediate engagement. Library/Method -> HTML/Tailwind. Sugar Detective Lab (Section 2): Report Info -> Specific sugar content in various foods/drinks. Goal -> Compare and inform. Viz/Presentation Method -> Interactive Bar Chart (Chart.js) showing sugar content (in grams and "sugar cubes" equivalent) for selected food categories. Category buttons for filtering. Interaction -> Clickable category buttons update the chart dynamically. Justification -> Bar charts are excellent for direct comparison; filtering prevents overload. Library/Method -> Chart.js, Vanilla JS, HTML/Tailwind. Sugar's Health Impact Across Generations (Section 3): Report Info -> Specific health consequences of high sugar for adults, seniors, and children. Goal -> Inform, differentiate, emphasize. Viz/Presentation Method -> Expandable/collapsible content panels for "General Adults," "Long-term for Seniors," and "Impact on Children," each with bullet points and clear icons. Interaction -> Click to expand/collapse. Justification -> Accordions keep UI clean while allowing drill-down. Library/Method -> HTML/Tailwind, Vanilla JS. My Daily Sugar Tracker (Section 4): Report Info -> Recommended daily sugar intake, common high-sugar items consumed. Goal -> Personalize awareness, track, inform. Viz/Presentation Method -> Form with dropdowns/checkboxes for common high-sugar items, numerical output for total sugar, and a simple gauge (Chart.js Doughnut) comparing total to daily limit (25g/50g recommended). Interaction -> User selects items, total sugar and gauge update dynamically. Justification -> Calculator provides immediate, personal relevance. Library/Method -> Vanilla JS, Chart.js, HTML/Tailwind. Smart Choices & Family Action Plan (Section 5): Report Info -> Practical tips for reducing sugar and healthy alternatives. Goal -> Provide solutions, guide action. Viz/Presentation Method -> Grid of interactive cards, each representing a tip. Each card reveals a brief explanation on click. Interaction -> Clickable cards to reveal more details. Justification -> Cards are visually appealing and easy to digest; click interaction encourages active learning. Library/Method -> HTML/Tailwind, Vanilla JS. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #FDFBF8;
+            color: #4A4A4A;
+        }
+        .nav-link {
+            transition: color 0.3s, border-bottom-color 0.3s;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #C06C59;
+            border-bottom-color: #C06C59;
+        }
+        .btn-primary {
+            background-color: #C06C59;
+            color: #FFFFFF;
+            transition: background-color 0.3s;
+        }
+        .btn-primary:hover {
+            background-color: #A95C4F;
+        }
+        .card {
+            background-color: #FFFFFF;
+            border: 1px solid #F0EBE3;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.07), 0 4px 6px -2px rgb(0 0 0 / 0.07);
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 700px; /* Increased max-width for better chart readability */
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px; /* Base height */
+            max-height: 450px; /* Max height */
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px; /* Adjust height for larger screens */
+            }
+        }
+        .accordion-header {
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .accordion-header:hover {
+            background-color: #F0EBE3;
+        }
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-out;
+        }
+        .accordion-content.active {
+            max-height: 500px; /* Sufficiently large to accommodate content */
+            transition: max-height 0.5s ease-in;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-white/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-6 py-3 flex justify-between items-center">
+            <div class="text-xl font-bold text-gray-800">控糖・健康識</div>
+            <div class="hidden md:flex space-x-8">
+                <a href="#section1" class="nav-link pb-1">甜蜜誘惑</a>
+                <a href="#section2" class="nav-link pb-1">健康衝擊</a>
+                <a href="#section3" class="nav-link pb-1">我的糖量</a>
+                <a href="#section4" class="nav-link pb-1">減糖行動</a>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Hero Section -->
+        <section class="text-center py-16 md:py-24 px-6 bg-amber-50">
+            <div class="container mx-auto">
+                <h1 class="text-3xl md:text-5xl font-bold text-gray-800 mb-4">甜蜜的陷阱，健康的警訊</h1>
+                <p class="text-lg md:text-xl text-gray-600 mb-8">聰明控糖，祖孫一起來！</p>
+                <p class="text-lg text-gray-700 mb-12">除了含糖飲料，大家覺得日常生活中還有哪些食物，藏著您意想不到的糖呢？這些糖對我們和孫子的健康有什麼影響？讓我們一起探索糖的秘密！</p>
+                <a href="#section1" class="btn-primary font-bold py-3 px-8 rounded-full">開始控糖探索</a>
+            </div>
+        </section>
+
+        <!-- Sugar Detective Lab -->
+        <section id="section1" class="py-16 md:py-20 px-6">
+            <div class="container mx-auto text-center">
+                <h2 class="text-2xl md:text-3xl font-bold mb-4">糖蹤現形！日常飲食中的隱形糖</h2>
+                <p class="max-w-3xl mx-auto text-gray-600 mb-12">許多食物嚐起來不特別甜，卻可能含有驚人的糖量！這些「隱形糖」是健康的甜蜜負擔。點擊下方類別，讓我們化身偵探，找出藏匿在食物和飲料中的糖分真相！</p>
+                
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 mb-12" id="food-sugar-categories">
+                </div>
+
+                <div class="card p-4 md:p-8">
+                    <p class="text-center mb-4 font-semibold">常見食物含糖量比較 (世界衛生組織建議成人每日精緻糖攝取量不超過50克，最好少於25克)</p>
+                    <div class="chart-container">
+                        <canvas id="sugarChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sugar's Health Impact Across Generations -->
+        <section id="section2" class="py-16 md:py-20 px-6 bg-amber-50">
+            <div class="container mx-auto">
+                <h2 class="text-2xl md:text-3xl font-bold text-center mb-4">甜蜜的代價：高糖飲食對各世代的影響</h2>
+                <p class="max-w-3xl mx-auto text-center text-gray-600 mb-12">過多的糖分攝取，對不同年齡層的健康都會帶來不同的甜蜜負擔。了解這些影響，幫助我們為自己和家人做出更好的選擇。</p>
+
+                <div class="max-w-3xl mx-auto space-y-4">
+                    <div class="card p-4">
+                        <div class="accordion-header flex justify-between items-center py-2 px-4 font-bold text-lg text-gray-700">
+                            <span>👩‍🦰👨‍🦰 一般成年人：常見的健康警訊</span>
+                            <span class="text-2xl transition-transform duration-300 transform rotate-0">▼</span>
+                        </div>
+                        <div class="accordion-content px-4 pt-2">
+                            <ul class="list-disc list-inside text-gray-600 space-y-2">
+                                <li>**體重增加與肥胖**：多餘的糖分容易轉化為脂肪堆積。</li>
+                                <li>**增加糖尿病風險**：胰臟長期超負荷工作，可能導致胰島素阻抗。</li>
+                                <li>**心血管疾病風險**：影響血脂、血壓，增加發炎反應，加速血管硬化。</li>
+                                <li>**脂肪肝**：尤其是果糖攝取過多，容易導致非酒精性脂肪肝。</li>
+                                <li>**情緒與精神**：血糖快速波動可能影響情緒穩定和專注力。</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="card p-4">
+                        <div class="accordion-header flex justify-between items-center py-2 px-4 font-bold text-lg text-gray-700">
+                            <span>👵👴 長輩們：加重的慢性病負擔</span>
+                            <span class="text-2xl transition-transform duration-300 transform rotate-0">▼</span>
+                        </div>
+                        <div class="accordion-content px-4 pt-2">
+                            <ul class="list-disc list-inside text-gray-600 space-y-2">
+                                <li>**慢性病難以控制**：使糖尿病、高血壓、高血脂等疾病更難以管理。</li>
+                                <li>**骨質流失**：高糖飲食可能影響鈣質吸收，加重骨質疏鬆風險。</li>
+                                <li>**認知功能下降**：血糖不穩與長期高糖攝取，可能與阿茲海默症等認知功能問題有關。</li>
+                                <li>**腎臟負擔**：長期高血糖間接增加腎臟壓力。</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="card p-4">
+                        <div class="accordion-header flex justify-between items-center py-2 px-4 font-bold text-lg text-gray-700">
+                            <span>👦👧 孫子們：成長發育的隱憂</span>
+                            <span class="text-2xl transition-transform duration-300 transform rotate-0">▼</span>
+                        </div>
+                        <div class="accordion-content px-4 pt-2">
+                            <ul class="list-disc list-inside text-gray-600 space-y-2">
+                                <li>**蛀牙與牙齒健康**：糖是口腔細菌滋生的溫床。</li>
+                                <li>**兒童肥胖**：增加未來罹患慢性病的風險。</li>
+                                <li>**過動與專注力問題**：血糖快速升降可能影響情緒和學習專注力。</li>
+                                <li>**味覺發展偏差**：從小習慣重甜，長大後可能偏好高糖食物，不利健康飲食習慣養成。</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- My Daily Sugar Tracker (Calculator) -->
+        <section id="section3" class="py-16 md:py-20 px-6">
+            <div class="container mx-auto">
+                <h2 class="text-2xl md:text-3xl font-bold text-center mb-4">我的每日糖量偵測器</h2>
+                <p class="max-w-3xl mx-auto text-center text-gray-600 mb-12">世界衛生組織建議成人每日精緻糖攝取量不超過50克（約10顆方糖），最好能少於25克（約5顆方糖）。來算算看您今天吃了多少糖？</p>
+
+                <div class="max-w-4xl mx-auto grid md:grid-cols-2 gap-8 items-center">
+                    <div class="card p-8">
+                        <h3 class="font-bold text-lg mb-4 text-center">今天我吃了這些糖</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="font-semibold">含糖飲料 (選擇最接近的)</label>
+                                <select id="beverage-sugar" class="w-full mt-1 p-2 border rounded-md bg-white">
+                                    <option value="0">無含糖飲料</option>
+                                    <option value="25">市售果汁/優酪乳 (約25g糖)</option>
+                                    <option value="35">汽水 (約35g糖)</option>
+                                    <option value="50">手搖飲半糖 (約50g糖)</option>
+                                    <option value="70">手搖飲全糖 (約70g糖)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="font-semibold">甜點/零食 (選擇最接近的)</label>
+                                <select id="snack-sugar" class="w-full mt-1 p-2 border rounded-md bg-white">
+                                    <option value="0">無甜點/零食</option>
+                                    <option value="15">一小包餅乾 (約15g糖)</option>
+                                    <option value="20">一個甜麵包/布丁 (約20g糖)</option>
+                                    <option value="30">一塊小蛋糕 (約30g糖)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="font-semibold">加工食品/醬料 (可能隱藏的糖)</label>
+                                <select id="processed-sugar" class="w-full mt-1 p-2 border rounded-md bg-white">
+                                    <option value="0">無加工食品/醬料</option>
+                                    <option value="5">一份甜醬料 (約5g糖)</option>
+                                    <option value="10">一份早餐穀物 (約10g糖)</option>
+                                    <option value="15">一份泡麵或速食麵 (約15g糖)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <p class="font-semibold text-lg mb-2">預估今日精緻糖攝取總量</p>
+                        <div class="relative w-48 h-48 mx-auto">
+                            <canvas id="sugarGauge"></canvas>
+                            <div id="total-sugar" class="absolute inset-0 flex flex-col items-center justify-center font-bold">
+                                <span class="text-4xl text-[#C06C59]">0</span>
+                                <span class="text-gray-600">克</span>
+                            </div>
+                        </div>
+                        <p class="mt-4 text-gray-600">WHO建議每日精緻糖：<br>少於 **25g** (最佳) / 不超過 **50g** (上限)</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Smart Choices & Family Action Plan -->
+        <section id="section4" class="py-16 md:py-20 px-6 bg-amber-50">
+            <div class="container mx-auto">
+                <h2 class="text-2xl md:text-3xl font-bold text-center mb-12">聰明控糖：祖孫一起來的健康行動！</h2>
+                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <div class="card p-6 text-center interactive-card">
+                        <div class="text-4xl mb-4">🔎</div>
+                        <h3 class="font-bold text-lg mb-2">看懂營養標示</h3>
+                        <p class="text-gray-600 hidden-content">購買食品時，仔細查看標示上的「糖」含量。特別留意「碳水化合物」中的「糖」，並注意多種糖的「隱藏名稱」。</p>
+                        <button class="text-[#C06C59] font-semibold mt-2 read-more">了解更多</button>
+                    </div>
+                    <div class="card p-6 text-center interactive-card">
+                        <div class="text-4xl mb-4">💧</div>
+                        <h3 class="font-bold text-lg mb-2">多喝白開水</h3>
+                        <p class="text-gray-600 hidden-content">用白開水、無糖茶取代含糖飲料。長輩可自製花草茶，孫子可嘗試水果水（將水果切片加入開水）。</p>
+                        <button class="text-[#C06C59] font-semibold mt-2 read-more">了解更多</button>
+                    </div>
+                    <div class="card p-6 text-center interactive-card">
+                        <div class="text-4xl mb-4">🍎</div>
+                        <h3 class="font-bold text-lg mb-2">選擇天然點心</h3>
+                        <p class="text-gray-600 hidden-content">以新鮮水果、原味優格、無調味堅果取代甜點零食。鼓勵孫子多吃水果原型，少吃加工甜食。</p>
+                        <button class="text-[#C06C59] font-semibold mt-2 read-more">了解更多</button>
+                    </div>
+                    <div class="card p-6 text-center interactive-card">
+                        <div class="text-4xl mb-4">👪</div>
+                        <h3 class="font-bold text-lg mb-2">全家動手做</h3>
+                        <p class="text-gray-600 hidden-content">鼓勵家人一起準備低糖餐點和點心。減少家中高糖零食囤積，創造健康的飲食環境，祖孫互相提醒鼓勵。</p>
+                        <button class="text-[#C06C59] font-semibold mt-2 read-more">了解更多</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-gray-800 text-white py-8 px-6">
+        <div class="container mx-auto text-center">
+            <p>"少一點糖，多一份愛，祖孫健康一起來！"</p>
+            <p class="text-sm mt-2 text-gray-400">衛教資訊僅供參考，若有健康問題請諮詢專業醫師。</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Data for Sugar Detective Lab
+            const foodSugarData = {
+                "含糖飲料": [
+                    { name: "手搖飲全糖 (700ml)", sugar: 70, cubes: 14 }, // 1 cube = 5g
+                    { name: "汽水 (330ml)", sugar: 35, cubes: 7 },
+                    { name: "市售優酪乳 (200ml)", sugar: 25, cubes: 5 },
+                    { name: "果汁飲品 (250ml)", sugar: 30, cubes: 6 },
+                    { name: "無糖茶/水", sugar: 0, cubes: 0 },
+                ],
+                "甜點糕餅": [
+                    { name: "甜麵包 (1個)", sugar: 20, cubes: 4 },
+                    { name: "小蛋糕 (1塊)", sugar: 30, cubes: 6 },
+                    { name: "布丁 (1個)", sugar: 18, cubes: 3.6 },
+                    { name: "鳳梨酥 (1個)", sugar: 25, cubes: 5 },
+                ],
+                "零食餅乾": [
+                    { name: "一小包餅乾 (50g)", sugar: 15, cubes: 3 },
+                    { name: "巧克力棒 (1條)", sugar: 25, cubes: 5 },
+                    { name: "洋芋片 (50g)", sugar: 5, cubes: 1 },
+                    { name: "無調味堅果 (30g)", sugar: 1, cubes: 0.2 },
+                ],
+                "加工食品/醬料": [
+                    { name: "泡麵 (1碗含調味)", sugar: 10, cubes: 2 },
+                    { name: "番茄醬 (1湯匙)", sugar: 4, cubes: 0.8 },
+                    { name: "甜沙拉醬 (1湯匙)", sugar: 6, cubes: 1.2 },
+                    { name: "早餐穀物 (30g)", sugar: 10, cubes: 2 },
+                ]
+            };
+
+            let sugarChart;
+            let sugarGaugeChart;
+
+            // Sugar Detective Lab Chart Initialization
+            function createSugarChart(initialCategory) {
+                const ctx = document.getElementById('sugarChart').getContext('2d');
+                const data = foodSugarData[initialCategory];
+                
+                const chartData = {
+                    labels: data.map(item => item.name),
+                    datasets: [{
+                        label: '含糖量 (克)',
+                        data: data.map(item => item.sugar),
+                        backgroundColor: '#FFDDC1', // Light peach for bars
+                        borderColor: '#C06C59',
+                        borderWidth: 0,
+                        borderRadius: 5,
+                    }]
+                };
+
+                sugarChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: chartData,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        indexAxis: 'y',
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: '糖含量 (克)'
+                                },
+                                ticks: {
+                                    callback: function(value) {
+                                        return value + '克';
+                                    }
+                                }
+                            },
+                            y: {
+                                ticks: {
+                                    autoSkip: false,
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const item = data[context.dataIndex];
+                                        return `含糖量: ${item.sugar} 克 (約 ${item.cubes} 顆方糖)`;
+                                    },
+                                    title: function(context) {
+                                        const label = context[0].label;
+                                        // Wrap labels if too long (more than 16 chars)
+                                        if (label.length > 16) {
+                                            const words = label.split(' ');
+                                            let line = '';
+                                            let lines = [];
+                                            for (let i = 0; i < words.length; i++) {
+                                                if (line.length + words[i].length + 1 > 16) {
+                                                    lines.push(line);
+                                                    line = words[i];
+                                                } else {
+                                                    line += (line ? ' ' : '') + words[i];
+                                                }
+                                            }
+                                            lines.push(line);
+                                            return lines;
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Update chart data based on category selection
+            function updateSugarChart(category) {
+                const data = foodSugarData[category];
+                sugarChart.data.labels = data.map(item => item.name);
+                sugarChart.data.datasets[0].data = data.map(item => item.sugar);
+                sugarChart.update();
+            }
+
+            // Setup category buttons for Sugar Detective Lab
+            function setupFoodSugarCategories() {
+                const container = document.getElementById('food-sugar-categories');
+                Object.keys(foodSugarData).forEach((category, index) => {
+                    const button = document.createElement('button');
+                    button.textContent = category;
+                    button.className = 'p-3 rounded-lg text-center font-semibold transition-colors duration-300';
+                    if (index === 0) {
+                        button.classList.add('bg-[#C06C59]', 'text-white');
+                    } else {
+                        button.classList.add('bg-white', 'text-gray-700', 'hover:bg-amber-100');
+                    }
+                    button.onclick = () => {
+                        updateSugarChart(category);
+                        document.querySelectorAll('#food-sugar-categories button').forEach(btn => {
+                            btn.classList.remove('bg-[#C06C59]', 'text-white');
+                            btn.classList.add('bg-white', 'text-gray-700', 'hover:bg-amber-100');
+                        });
+                        button.classList.add('bg-[#C06C59]', 'text-white');
+                        button.classList.remove('bg-white', 'text-gray-700', 'hover:bg-amber-100');
+                    };
+                    container.appendChild(button);
+                });
+            }
+
+            // Accordion functionality for Health Impact section
+            function setupAccordions() {
+                document.querySelectorAll('.accordion-header').forEach(header => {
+                    header.addEventListener('click', () => {
+                        const content = header.nextElementSibling;
+                        const icon = header.querySelector('span:last-child');
+                        
+                        // Close other open accordions
+                        document.querySelectorAll('.accordion-content.active').forEach(activeContent => {
+                            if (activeContent !== content) {
+                                activeContent.classList.remove('active');
+                                activeContent.previousElementSibling.querySelector('span:last-child').style.transform = 'rotate(0deg)';
+                            }
+                        });
+
+                        content.classList.toggle('active');
+                        if (content.classList.contains('active')) {
+                            icon.style.transform = 'rotate(180deg)';
+                        } else {
+                            icon.style.transform = 'rotate(0deg)';
+                        }
+                    });
+                });
+            }
+
+            // Daily Sugar Tracker Gauge Chart Initialization
+            function createSugarGaugeChart() {
+                const ctx = document.getElementById('sugarGauge').getContext('2d');
+                const data = {
+                    datasets: [{
+                        data: [0, 50], // Initial sugar, then remaining up to 50g
+                        backgroundColor: ['#C06C59', '#EAEAEA'],
+                        borderWidth: 0,
+                        circumference: 270,
+                        rotation: 225,
+                    }]
+                };
+                sugarGaugeChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: data,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        cutout: '80%',
+                        plugins: {
+                            tooltip: { enabled: false }
+                        }
+                    }
+                });
+            }
+
+            // Daily Sugar Tracker Calculator Logic
+            function updateDailySugarCalculator() {
+                const beverageEl = document.getElementById('beverage-sugar');
+                const snackEl = document.getElementById('snack-sugar');
+                const processedEl = document.getElementById('processed-sugar');
+                const totalSugarEl = document.getElementById('total-sugar').querySelector('span');
+                const dailyLimit = 50; // WHO recommended max
+
+                function calculate() {
+                    const beverageSugar = parseInt(beverageEl.value);
+                    const snackSugar = parseInt(snackEl.value);
+                    const processedSugar = parseInt(processedEl.value);
+                    const total = beverageSugar + snackSugar + processedSugar;
+                    
+                    totalSugarEl.textContent = total;
+                    
+                    sugarGaugeChart.data.datasets[0].data[0] = total;
+                    sugarGaugeChart.data.datasets[0].data[1] = Math.max(0, dailyLimit - total); // Remaining sugar
+                    
+                    // Change color if exceeds 50g (upper limit) or 25g (optimal limit)
+                    if (total > dailyLimit) {
+                        sugarGaugeChart.data.datasets[0].backgroundColor = ['#E74C3C', '#EAEAEA']; // Red if exceeding upper limit
+                    } else if (total > 25) {
+                        sugarGaugeChart.data.datasets[0].backgroundColor = ['#F5B041', '#EAEAEA']; // Orange if exceeding optimal but within upper
+                    } else {
+                        sugarGaugeChart.data.datasets[0].backgroundColor = ['#C06C59', '#EAEAEA']; // Muted red for optimal
+                    }
+
+                    sugarGaugeChart.update();
+                }
+
+                beverageEl.addEventListener('change', calculate);
+                snackEl.addEventListener('change', calculate);
+                processedEl.addEventListener('change', calculate);
+                
+                calculate(); // Initial calculation
+            }
+
+            // Interactive cards in Smart Choices section
+            function setupInteractiveCards() {
+                document.querySelectorAll('.interactive-card').forEach(card => {
+                    const content = card.querySelector('.hidden-content');
+                    const button = card.querySelector('.read-more');
+                    
+                    button.addEventListener('click', () => {
+                        content.classList.toggle('hidden');
+                        if (content.classList.contains('hidden')) {
+                            button.textContent = '了解更多';
+                        } else {
+                            button.textContent = '收起';
+                        }
+                    });
+                });
+            }
+
+            // Smooth scrolling for navigation
+            function setupSmoothScrolling() {
+                document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                    anchor.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        document.querySelector(this.getAttribute('href')).scrollIntoView({
+                            behavior: 'smooth'
+                        });
+                    });
+                });
+            }
+
+            // Initialize all interactive elements
+            setupFoodSugarCategories();
+            createSugarChart(Object.keys(foodSugarData)[0]); // Load first category by default
+            setupAccordions();
+            createSugarGaugeChart();
+            updateDailySugarCalculator();
+            setupInteractiveCards();
+            setupSmoothScrolling();
+        });
+    </script>
+</body>
+</html>
